@@ -1,9 +1,10 @@
 /* CU FIRST minimal theme — Red / Black / White, white background */
 :root{
-  --red:#C8102E; /* flag red */
-  --black:#111111;
+  --red:#ED1B24; /* flag red */
+  --black:#000000;
   --white:#FFFFFF;
   --muted:#6B7280;
+  --muted2:#212121;
   --border:#E5E7EB;
   --bg:#FFFFFF;
   --bg-alt:#FAFAFA;
@@ -85,10 +86,10 @@ input:focus, select:focus, textarea:focus{outline:2px solid var(--red);outline-o
 .form-note{color:var(--muted);font-size:.95rem}
 
 /* Footer */
-.site-footer{border-top:1px solid var(--border);padding:1.2rem 0;background:var(--white)}
-.footer-inner{display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.site-footer{border-top:1px solid var(--border);padding:1.2rem 0;background:var(--muted2)}
+.footer-inner{display:flex;align-items:center;justify-content:space-between;gap:1rem;color:var(--white)}
 .social{display:flex;gap:.9rem;list-style:none;margin:0;padding:0}
-.social a{color:var(--black)}
+.social a{color:var(--white)}
 
 /* Responsive */
 @media (max-width: 900px){
