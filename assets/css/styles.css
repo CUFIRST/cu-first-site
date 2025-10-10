@@ -25,8 +25,28 @@ a:hover{text-decoration:underline}
 .site-header{position:sticky;top:0;background:var(--white);border-bottom:1px solid var(--border);z-index:20}
 .header-inner{display:flex;align-items:center;justify-content:space-between;padding:.8rem 0}
 .brand{display:inline-flex;align-items:baseline;gap:.35rem;font-weight:800;font-size:1.25rem;color:var(--black)}
-.brand-mark{display:inline-grid;place-items:center;background:var(--black);color:#fff;border-radius:.5rem;padding:.2rem .4rem;letter-spacing:.5px}
-.brand-text{letter-spacing:2px}
+/* Replace text logo with image */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  font-weight: 800;
+  font-size: 1.25rem;
+  color: var(--black);
+}
+/* Image logo style */
+.brand-logo {
+  height: 48px;      /* match header height */
+  width: auto;
+  display: block;
+  vertical-align: middle;
+}
+/* Optional: slightly reduce on small screens */
+@media (max-width: 640px) {
+  .brand-logo {
+    height: 38px;
+  }
+}
 .nav-toggle{display:none;background:none;border:1px solid var(--border);padding:.4rem .6rem;border-radius:.5rem;font-size:1rem}
 .site-nav ul{display:flex;gap:1rem;margin:0;padding:0;list-style:none}
 .site-nav a{display:inline-block;padding:.4rem .6rem;border-radius:.5rem;color:var(--black)}
