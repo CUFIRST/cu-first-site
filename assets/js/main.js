@@ -1,6 +1,7 @@
 // ============================================================
 // CU FIRST — Main JavaScript
 // Handles: mobile nav, footer year, event rendering, and form submission
+// Updated October 11/2025 - James Neumann
 // ============================================================
 
 // -----------------------------
