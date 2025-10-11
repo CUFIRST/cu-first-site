@@ -125,7 +125,9 @@
       <div class="container">
         <h2>Join Us</h2>
         <p>Students, alumni, mentors, and sponsors are welcome. Join the mailing list or send us a message.</p>
-        <form class="contact-form" method="post" action="https://formspree.io/f/your_form_id">
+
+
+        <form class="contact-form" id="contactForm">
           <div class="form-row">
             <label for="name">Name</label>
             <input id="name" name="name" type="text" required />
@@ -149,7 +151,10 @@
             <textarea id="message" name="message" rows="5" placeholder="Tell us how you’d like to get involved."></textarea>
           </div>
           <button class="btn btn-primary" type="submit">Submit</button>
+          <p id="form-status" class="form-note"></p>
         </form>
+
+
       </div>
     </section>
   </main>

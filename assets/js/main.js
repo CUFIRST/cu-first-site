@@ -30,3 +30,37 @@
     }
   }
 })();
+
+document.addEventListener("DOMContentLoaded", function () {
+  const form = document.getElementById("contactForm");
+  const status = document.getElementById("form-status");
+
+  // Replace this with your actual Apps Script URL
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxcdyt33h0KnCpSKEmQYhh-0IQQ1-pRNXTo5t5stXpm-WN3H0nK3Tie7h2Nk3GPcKEj8Q/exec";
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    status.textContent = "Sending…";
+
+    const data = Object.fromEntries(new FormData(form));
+
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const result = await res.json();
+
+      if (result.status === "success") {
+        status.textContent = "Message sent successfully. Thank you!";
+        form.reset();
+      } else {
+        status.textContent = "Error: Unable to send message.";
+      }
+    } catch (err) {
+      console.error(err);
+      status.textContent = "Network error — please try again later.";
+    }
+  });
+});
