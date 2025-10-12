@@ -1,6 +1,6 @@
 // ============================================================
 // CU FIRST — Main JavaScript
-// Handles: mobile nav, footer year, event rendering, and form submission
+// Handles: mobile nav, footer year, event rendering, and form submission iframe handler
 // Updated October 11/2025 - James Neumann
 // ============================================================
 
@@ -62,49 +62,65 @@
 })();
 
 // ============================================================
-// 4. Contact Form Submission via Google Apps Script
+// 4. Contact form submission via hidden iframe + postMessage
 // ============================================================
 
-// This script assumes it is loaded with <script defer src="assets/js/main.js"></script>
-// so the DOM is ready when this code executes.
+(function () {
+  const form = document.getElementById("contactForm");
+  const status = document.getElementById("form-status");
+  const iframe = document.getElementById("hidden_iframe");
 
-const form = document.getElementById("contactForm");
-const status = document.getElementById("form-status");
+  if (!form || !status) {
+    console.warn("Contact form or status element not present.");
+    return;
+  }
 
-// Replace this with your actual Apps Script deployment URL
-const SCRIPT_URL =
-  "https://script.google.com/macros/s/AKfycbxcdyt33h0KnCpSKEmQYhh-0IQQ1-pRNXTo5t5stXpm-WN3H0nK3Tie7h2Nk3GPcKEj8Q/exec";
-
-if (form) {
-  console.log("CU FIRST contact form handler attached.");
-
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault(); // Prevent default browser POST + query string
+  // When the form is submitted the browser performs a native POST and loads the response
+  // into the hidden iframe. The Apps Script response posts a message to the parent window.
+  form.addEventListener("submit", function (e) {
+    // Show immediate feedback; actual success/error arrives via postMessage from iframe.
     status.textContent = "Sending…";
 
-    const data = Object.fromEntries(new FormData(form));
+    // Failsafe / timeout if no message is received
+    form._sendTimeout = setTimeout(() => {
+      status.textContent = "Still sending — if this persists, please email cufirst.info@gmail.com";
+    }, 12000);
+  });
 
-    try {
-      const res = await fetch(SCRIPT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+  // Accept postMessage from the iframe (Apps Script writes JS that posts to parent)
+  window.addEventListener(
+    "message",
+    function (ev) {
+      // Accept messages from the Apps Script iframe origin or from your site origin.
+      // If your site origin is different from https://cu-first.ca, add it here.
+      const allowedOrigins = [
+        "https://script.google.com",
+        "https://cu-first.ca",
+        window.location.origin
+      ];
+      if (!allowedOrigins.includes(ev.origin)) {
+        // ignore unexpected origins
+        console.warn("Ignored postMessage from unexpected origin:", ev.origin);
+        return;
+      }
 
-      const result = await res.json();
-      console.log("Apps Script response:", result);
+      const data = ev.data || {};
+      if (form._sendTimeout) {
+        clearTimeout(form._sendTimeout);
+        form._sendTimeout = null;
+      }
 
-      if (result.status === "success") {
+      if (data.status === "success") {
         status.textContent = "Message sent successfully. Thank you!";
         form.reset();
+      } else if (data.status === "error") {
+        const msg = data.message ? String(data.message) : "Please try again.";
+        status.textContent = "Error sending message: " + msg;
       } else {
-        status.textContent = "Error: Unable to send message.";
+        // Unknown message — just log it
+        console.log("Message from iframe:", data);
       }
-    } catch (err) {
-      console.error("Form send error:", err);
-      status.textContent = "Network error — please try again later.";
-    }
-  });
-} else {
-  console.warn("Contact form not found — no handler attached.");
-}
+    },
+    false
+  );
+})();

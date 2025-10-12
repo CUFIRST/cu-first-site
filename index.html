@@ -127,15 +127,24 @@
         <p>Students, alumni, mentors, and sponsors are welcome. Join the mailing list or send us a message.</p>
 
 
-        <form class="contact-form" id="contactForm">
+        <!-- Hidden iframe target for form submission (keeps page from navigating) -->
+        <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
+
+        <!-- Contact form posts to Apps Script exec URL; response loads into the hidden iframe -->
+        <form class="contact-form" id="contactForm"
+              method="post"
+              action="https://script.google.com/macros/s/AKfycbxcdyt33h0KnCpSKEmQYhh-0IQQ1-pRNXTo5t5stXpm-WN3H0nK3Tie7h2Nk3GPcKEj8Q/exec"
+              target="hidden_iframe">
           <div class="form-row">
             <label for="name">Name</label>
-            <input id="name" name="name" type="text" required />
+            <input id="name" name="name" type="text" required autocomplete="name" />
           </div>
+
           <div class="form-row">
             <label for="email">Email</label>
-            <input id="email" name="email" type="email" required />
+            <input id="email" name="email" type="email" required autocomplete="email" />
           </div>
+
           <div class="form-row">
             <label for="role">I am a…</label>
             <select id="role" name="role">
@@ -146,13 +155,16 @@
               <option>Other</option>
             </select>
           </div>
+
           <div class="form-row">
             <label for="message">Message</label>
             <textarea id="message" name="message" rows="5" placeholder="Tell us how you’d like to get involved."></textarea>
           </div>
+
           <button class="btn btn-primary" type="submit">Submit</button>
           <p id="form-status" class="form-note"></p>
         </form>
+
 
 
       </div>
