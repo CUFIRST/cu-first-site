@@ -38,15 +38,33 @@
 
   <main id="main">
     <section id="home" class="hero">
-      <div class="container hero-inner">
-        <h1>Carleton University <i>FIRST<sup>&reg;</sup></i> Robotics Alumni & Mentoring Association</h1>
-        <p class="lead">We connect <i>FIRST</i> alumni, mentors, and students at Carleton to grow FIRST Robotics programs across Eastern Ontario.</p>
-        <div class="cta-row">
-          <a class="btn btn-primary" href="#join">Get Involved</a>
-          <a class="btn btn-outline" href="#events">Upcoming Events</a>
+      <div class="hero-slideshow" id="hero-slideshow" aria-roledescription="carousel">
+        <!-- Slides: add or remove <div class="slide"> blocks as you like -->
+        <div class="slide active" data-index="0" aria-hidden="false">
+          <img src="assets/img/C4-Bot_JamesReff.jpg" alt="CU FIRST outreach event" />
+        </div>
+        <div class="slide" data-index="1" aria-hidden="true">
+          <img src="assets/img/Field-Visualisation-Meeting.jpg" alt="Students working on a robot" />
+        </div>
+        <div class="slide" data-index="2" aria-hidden="true">
+          <img src="assets/img/C4-Drivers_epic.jpg" alt="Robotics demo at the university" />
+        </div>
+
+        <!-- centered CU FIRST overlay logo and headline -->
+        <div class="hero-overlay">
+          <div class="hero-center">
+            <img src="assets/img/CUFIRSTlogo_white-and-red.png" class="hero-logo" alt="CU FIRST logo" />
+            <h1>Carleton University <i>FIRST<sup>&reg;</sup></i> Robotics Alumni & Mentoring Association</h1>
+            <!-- <p class="lead">We connect <i>FIRST</i> alumni, mentors, and students at Carleton to grow FIRST Robotics programs across Eastern Ontario.</p> -->
+            <div class="cta-row">
+              <a class="btn btn-primary" href="#join">Get Involved</a>
+              <a class="btn btn-outline" href="#events">Upcoming Events</a>
+            </div>
+          </div>
         </div>
       </div>
     </section>
+
 
     <section id="about" class="section">
       <div class="container">
@@ -89,9 +107,16 @@
           },
           {
             "title": "Winter 2026 Test‑Field Series",
-            "date": "2026-01-17",
+            "date": "2026-01-17 to 2026-03-31",
             "location": "University Centre Galleria",
             "desc": "Practice matches on a full sized FRC field to prepare for competition.",
+            "link": "#"
+          },
+          {
+            "title": "Robot in 3 Days - Ri3D",
+            "date": "2026-01-10 to 2026-01-13",
+            "location": "Location to be announced",
+            "desc": "Our team of students will design and build a robot in 3 days based on the new game challenge. Check our YouTube and social media for updates.",
             "link": "#"
           }
         ]'>
@@ -173,14 +198,27 @@
 
   <footer class="site-footer">
     <div class="container footer-inner">
-      <p>&copy; <span id="year"></span> CU FIRST. All rights reserved.</p>
-      <ul class="social">
-        <li><a href="#" aria-label="Email">Email</a></li>
-        <li><a href="#" aria-label="Discord">Discord</a></li>
-        <li><a href="#" aria-label="YouTube">YouTube</a></li>
-      </ul>
+      <div class="footer-left">
+        <p>&copy; <span id="year"></span> CU FIRST. All rights reserved.</p>
+      </div>
+
+      <div class="footer-center" aria-hidden="false">
+        <img src="assets/img/FIRSTRegionHorz_CanadaReverse.png" alt="FIRST Canada" class="footer-first-logo" />
+      </div>
+
+      <div class="footer-right">
+        <ul class="social">
+          <li><a href="#" aria-label="Instagram">Instagram</a></li>
+          <li><a href="#" aria-label="Facebook">Facebook</a></li>
+          <li><a href="#" aria-label="Twitter">Twitter</a></li>
+          <li><a href="#" aria-label="Discord">Discord</a></li>
+          <li><a href="#" aria-label="YouTube">YouTube</a></li>
+        </ul>
+      </div>
     </div>
   </footer>
+
+
 
   <script src="assets/js/main.js" defer></script>
 </body>

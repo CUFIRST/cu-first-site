@@ -1,4 +1,5 @@
 /* CU FIRST minimal theme — Red / Black / White, white background */
+/* ---- keep variable values exactly as requested ---- */
 :root{
   --red:#ED1B24; /* flag red */
   --black:#000000;
@@ -11,6 +12,8 @@
   --radius:1rem;
   --shadow:0 6px 18px rgba(0,0,0,0.07);
 }
+
+/* Reset & base ----------------------------------------------------------- */
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;background:var(--bg);color:var(--black);font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.5}
 img{max-width:100%;display:block}
@@ -18,88 +21,181 @@ a{color:var(--red);text-decoration:none}
 a:hover{text-decoration:underline}
 .container{width:min(1100px, 92%);margin-inline:auto}
 
-/* Accessibility helpers */
+/* Accessibility helpers ------------------------------------------------- */
 .skip-link{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
 .skip-link:focus{position:static;width:auto;height:auto;padding:.5rem 1rem;background:var(--red);color:#fff;border-radius:.5rem}
 
-/* Header */
-.site-header{position:sticky;top:0;background:var(--white);border-bottom:1px solid var(--border);z-index:20}
+/* Header / nav ---------------------------------------------------------- */
+.site-header{position:sticky;top:0;background:var(--white);border-bottom:1px solid var(--border);z-index:1000}
 .header-inner{display:flex;align-items:center;justify-content:space-between;padding:.8rem 0}
 .brand{display:inline-flex;align-items:baseline;gap:.35rem;font-weight:800;font-size:1.25rem;color:var(--black)}
-/* Replace text logo with image */
-.brand {
-  display: inline-flex;
-  align-items: center;
-  text-decoration: none;
-  font-weight: 800;
-  font-size: 1.25rem;
-  color: var(--black);
-}
-/* Image logo style */
-.brand-logo {
-  height: 48px;      /* match header height */
-  width: auto;
-  display: block;
-  vertical-align: middle;
-}
-/* Optional: slightly reduce on small screens */
-@media (max-width: 640px) {
-  .brand-logo {
-    height: 38px;
-  }
-}
+.brand{display:inline-flex;align-items:center;text-decoration:none;font-weight:800;font-size:1.25rem;color:var(--black)}
+.brand-logo{height:48px;width:auto;display:block;vertical-align:middle}
+@media (max-width:640px){ .brand-logo{height:38px} }
+
 .nav-toggle{display:none;background:none;border:1px solid var(--border);padding:.4rem .6rem;border-radius:.5rem;font-size:1rem}
 .site-nav ul{display:flex;gap:1rem;margin:0;padding:0;list-style:none}
 .site-nav a{display:inline-block;padding:.4rem .6rem;border-radius:.5rem;color:var(--black)}
 .site-nav a:hover{background:var(--bg-alt)}
 
-/* Hero */
-.hero{background:linear-gradient(180deg, #fff 0, #fff 55%, #f7f7f7 100%);padding:clamp(2rem, 6vw, 5rem) 0;border-bottom:1px solid var(--border)}
-.hero h1{font-size:clamp(2rem,4vw,3rem);margin:0 0 .5rem 0}
-.lead{font-size:1.125rem;color:#333;max-width:70ch}
-.cta-row{display:flex;gap:.75rem;margin-top:1rem}
-.btn{display:inline-block;padding:.75rem 1rem;border-radius:.75rem;border:1px solid var(--black);font-weight:600}
-.btn-primary{background:var(--red);border-color:var(--red);color:#fff}
-.btn-outline{background:transparent;color:var(--black)}
+/* ---- Hero (background slideshow + overlay) ---------------------------- */
+/* Keep visual style of hero and increase vertical size via JS helper */
+.hero{
+  background: linear-gradient(180deg, #fff 0, #fff 55%, #f7f7f7 100%);
+  padding: clamp(2rem, 6vw, 5rem) 0;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+  /* do not force a single fixed height here — JS will set hero height to fill viewport minus header */
+}
 
-/* Sections */
+/* slideshow container and slides */
+.hero-slideshow{position:relative;width:100%;height:100%}
+.hero-slideshow .slide{
+  position:absolute;inset:0;opacity:0;transition:opacity .9s ease;z-index:0;pointer-events:none;background:#000
+}
+.hero-slideshow .slide img{width:100%;height:100%;object-fit:cover;object-position:center center;display:block}
+.hero-slideshow .slide.active{opacity:1;z-index:0;pointer-events:auto}
+
+/* overlay content (logo + headline + CTAs) — centered, uses white text on images */
+.hero-overlay{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.hero-center{pointer-events:auto;text-align:center;color:var(--white);max-width:920px;width:92%;margin:0 auto}
+
+/* hero logo and headings */
+.hero-logo{display:block;margin:0 auto 1rem;height:110px;width:auto;filter:drop-shadow(0 6px 18px rgba(0,0,0,0.35))}
+.hero-center h1{margin:0 0 .6rem;font-size:clamp(2rem,4vw,3rem);color:var(--white);line-height:1.05;text-shadow:0 6px 18px rgba(0,0,0,0.6)}
+.hero-center .lead{color:rgba(255,255,255,0.95);max-width:70ch;margin:0 auto 1rem}
+
+/* Buttons: red primary, outline button */
+.btn{display:inline-block;padding:.75rem 1rem;border-radius:.75rem;border:1px solid var(--black);font-weight:600;text-decoration:none}
+.btn-primary{background:var(--red);border-color:var(--red);color:#fff}
+.btn-outline{background:transparent;color:var(--white);border-color:rgba(255,255,255,0.85)}
+
+/* Ensure contact form submit uses same button style */
+.contact-form button.btn, .contact-form input[type="submit"], form#contactForm button[type="submit"]{
+  appearance:none;-webkit-appearance:none;background:var(--red);color:#fff;border-radius:.75rem;border:1px solid var(--red);padding:.75rem 1rem;font-weight:600;cursor:pointer
+}
+
+/* small screens */
+@media (max-width:640px){
+  .hero-logo{height:72px;margin-bottom:.5rem}
+  .hero-center h1{font-size:clamp(1.4rem,6vw,1.8rem)}
+  .hero{padding:clamp(1rem,4vw,2rem) 0;min-height:36vh}
+}
+
+/* ---- Sections -------------------------------------------------------- */
 .section{padding:clamp(2rem,6vw,4rem) 0}
 .section.alt{background:var(--bg-alt);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
 .section h2{margin:0 0 .75rem 0;font-size:1.6rem}
 
-/* Grids */
+/* grids & cards */
 .feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1rem}
 .feature{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;box-shadow:var(--shadow)}
 .card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1rem}
 .card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:.5rem}
 .card .meta{color:var(--muted);font-size:.95rem}
 
-/* Sponsors */
+/* logos */
 .logo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;align-items:center}
 .logo-cell{border:1px dashed var(--border);border-radius:.75rem;padding:1rem;background:#fff;display:grid;place-items:center}
 
-/* Contact form */
+/* contact form controls */
 .contact-form{display:grid;gap:1rem;margin-top:1rem}
 .form-row{display:grid;gap:.35rem}
-input, select, textarea{padding:.7rem .8rem;border:1px solid var(--border);border-radius:.6rem;font:inherit;background:#fff}
-input:focus, select:focus, textarea:focus{outline:2px solid var(--red);outline-offset:1px}
+input,select,textarea{padding:.7rem .8rem;border:1px solid var(--border);border-radius:.6rem;font:inherit;background:#fff}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--red);outline-offset:1px}
 .form-note{color:var(--muted);font-size:.95rem}
 
-/* Footer */
-.site-footer{border-top:1px solid var(--border);padding:1.2rem 0;background:var(--muted2)}
-.footer-inner{display:flex;align-items:center;justify-content:space-between;gap:1rem;color:var(--white)}
-.social{display:flex;gap:.9rem;list-style:none;margin:0;padding:0}
-.social a{color:var(--white)}
+/* ---- Footer colors/structure ------------------ */
+.site-footer{border-top:1px solid var(--border);padding:1.2rem 0;background:var(--muted2);color:var(--black)}
+.footer-inner{display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.footer-left{color:var(--white)}
+.footer-center{display:flex;align-items:center;justify-content:center;color:var(--white)}
+.footer-first-logo{height:36px;width:auto;display:block}
+.footer-right .social{display:flex;gap:.9rem;list-style:none;margin:0;padding:0;align-items:center}
+.footer-right .social li a{color:var(--white);text-decoration:none}
 
-/* Responsive */
-@media (max-width: 900px){
-  .feature-grid,.card-grid,.logo-grid{grid-template-columns:1fr 1fr}
+/* responsive footer */
+@media (max-width:640px){
+  .footer-inner{flex-direction:column;text-align:center;gap:.75rem}
+  .footer-right .social{justify-content:center}
 }
-@media (max-width: 640px){
-  .nav-toggle{display:inline-block}
-  .site-nav{display:none}
-  .site-nav.open{display:block;position:absolute;right:4%;top:3.2rem;background:#fff;border:1px solid var(--border);border-radius:.75rem;box-shadow:var(--shadow)}
-  .site-nav ul{flex-direction:column;padding:.5rem}
-  .feature-grid,.card-grid,.logo-grid{grid-template-columns:1fr}
+
+/* ---- Helper layout fixes for hero height & image coverage (keep these) */
+.hero-slideshow{width:100%;height:100%}
+.hero-slideshow .slide{width:100%;height:100%}
+.hero-slideshow .slide img{width:100%;height:100%;object-fit:cover;object-position:center center}
+
+/* end of stylesheet */
+
+
+
+
+/* --- Fix: slideshow covers whole hero; overlay keeps visual padding --- */
+/* This CSS replaces the previous hero CSS to ensure the slideshow fills the entire hero area,
+   while the overlay content (logo, headline, buttons) retains the same visual padding as before.
+   The height of the hero is still controlled by your JS helper to fill the viewport minus header. */
+/* Note that it may be easiest to replace the existing .hero, .hero-slideshow, .hero-overlay, 
+   and .hero-center CSS with this code in the future, as some is now redundant - James Neumann, Oct 12/2025*/
+
+   /* remove padding from the hero container so the slideshow can reach edges */
+.hero {
+  /* keep border and background as before */
+  background: linear-gradient(180deg, #fff 0, #fff 55%, #f7f7f7 100%);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+  /* height is still controlled by your JS helper (preferred) */
+  padding: 0; /* << important: padding moved to .hero-overlay below */
 }
-.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+/* ensure slideshow absolutely fills the hero (covers the top & bottom) */
+.hero-slideshow {
+  position: absolute;
+  inset: 0;        /* top:0; right:0; bottom:0; left:0; */
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+/* slides fill container */
+.hero-slideshow .slide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity .9s ease;
+  z-index: 0;
+}
+.hero-slideshow .slide.active { opacity: 1; z-index: 0; }
+.hero-slideshow .slide img { width:100%; height:100%; object-fit:cover; object-position:center center; }
+/* move visual padding into overlay so the text keeps same spacing */
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  pointer-events:none;
+  /* THIS is the visual padding you had previously on .hero */
+  padding: clamp(2rem, 6vw, 5rem) 0;   /* same values you used before */
+}
+/* overlay center stays the same but ensure it is above slides */
+.hero-center {
+  pointer-events:auto;
+  text-align:center;
+  color:var(--white);
+  max-width:920px;
+  width:92%;
+  margin:0 auto;
+  z-index:3;
+}
+/* keep heading/button coloring (no changes to variables) */
+.hero-center h1 { color:var(--white); text-shadow:0 6px 18px rgba(0,0,0,0.6); margin-top: 4rem; margin-bottom: 4rem; }
+
+/* Temporaily disabled to reduce landing page text clutter over hero slide show */ 
+/* .hero-center .lead { color:var(--white); text-shadow:0 6px 18px rgba(0,0,0,0.6); font-weight: bold; font-size: large; margin-top: 9rem; } */
+/* tidy: if you use JS to set hero height, it still applies; otherwise set a min-height */
+.hero { min-height: 360px; }
+
+.hero-logo{display:block; margin:0 auto 2rem; height:150px; width:auto; filter:drop-shadow(0 6px 18px rgba(0,0,0,0.35))}
