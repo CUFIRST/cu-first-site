@@ -97,7 +97,7 @@ a:hover{text-decoration:underline}
 
 /* logos */
 .logo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;align-items:center}
-.logo-cell{border:1px dashed var(--border);border-radius:.75rem;padding:1rem;background:#fff;display:grid;place-items:center}
+.logo-cell{/*border:1px dashed var(--border);border-radius:.75rem;*/padding:1rem;background:#fff;display:grid;place-items:center}
 
 /* contact form controls */
 .contact-form{display:grid;gap:1rem;margin-top:1rem}
