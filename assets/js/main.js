@@ -157,67 +157,43 @@
 })();
 
 // ============================================================
-// 4. Contact form submission via hidden iframe + postMessage
+// 4. Contact form submission via fetch to Apps Script endpoint
 // ============================================================
 
 (function () {
   const form = document.getElementById("contactForm");
   const status = document.getElementById("form-status");
-  const iframe = document.getElementById("hidden_iframe");
+  if (!form || !status) return;
 
-  if (!form || !status) {
-    console.warn("Contact form or status element not present.");
-    return;
-  }
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxN_LpBbHs8DxtgMPPTaiO-TAA4Q8TDlYz6NZCMZClAFVLKyk-OArMnUlf9PRyyhsxqTw/exec";
 
-  // When the form is submitted the browser performs a native POST and loads the response
-  // into the hidden iframe. The Apps Script response posts a message to the parent window.
   form.addEventListener("submit", function (e) {
-    // Show immediate feedback; actual success/error arrives via postMessage from iframe.
+    // Prevent the default form submission from navigating the page
+    e.preventDefault();
     status.textContent = "Sending…";
 
-    // Failsafe / timeout if no message is received
-    form._sendTimeout = setTimeout(() => {
-      status.textContent = "Still sending — if this persists, please email cufirst.info@gmail.com";
-    }, 12000);
-  });
+    // Collect all form fields into a FormData object
+    const data = new FormData(form);
 
-  // Accept postMessage from the iframe (Apps Script writes JS that posts to parent)
-  window.addEventListener(
-    "message",
-    function (ev) {
-      // Accept messages from the Apps Script iframe origin or from your site origin.
-      // If your site origin is different from https://cu-first.ca, add it here.
-      const allowedOrigins = [
-        "https://script.google.com",
-        "https://cu-first.ca",
-        window.location.origin
-      ];
-      if (!allowedOrigins.includes(ev.origin)) {
-        // ignore unexpected origins
-        console.warn("Ignored postMessage from unexpected origin:", ev.origin);
-        return;
-      }
-
-      const data = ev.data || {};
-      if (form._sendTimeout) {
-        clearTimeout(form._sendTimeout);
-        form._sendTimeout = null;
-      }
-
-      if (data.status === "success") {
+    // Send the form data to the Apps Script endpoint via AJAX
+    fetch(SCRIPT_URL, {
+      method: "POST",
+      body: data
+    })
+    .then(res => {
+      // Update the status message based on whether the request succeeded
+      if (res.ok) {
         status.textContent = "Message sent successfully. Thank you!";
         form.reset();
-      } else if (data.status === "error") {
-        const msg = data.message ? String(data.message) : "Please try again.";
-        status.textContent = "Error sending message: " + msg;
       } else {
-        // Unknown message — just log it
-        console.log("Message from iframe:", data);
+        status.textContent = "Error sending message. Please try again.";
       }
-    },
-    false
-  );
+    })
+    .catch(() => {
+      // Network error or the request was blocked entirely
+      status.textContent = "Error sending message. Please try again.";
+    });
+  });
 })();
 
 // ============================================================
