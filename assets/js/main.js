@@ -185,8 +185,6 @@
       if (res.ok) {
         status.textContent = "Message sent successfully. Thank you!";
         form.reset();
-      } else {
-        status.textContent = "Error sending message. Please try again.";
       }
     })
     .catch(() => {
