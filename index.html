@@ -155,9 +155,14 @@
         <p>Students, alumni, mentors, and sponsors are welcome. Join the mailing list or send us a message.</p>
 
 
-        <!-- Contact form — submission handled via fetch in main.js -->
+        <!-- Hidden iframe target for form submission (keeps page from navigating) -->
+        <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
+
+        <!-- Contact form posts to Apps Script exec URL; response loads into the hidden iframe -->
         <form class="contact-form" id="contactForm"
-              method="post">
+              method="post"
+              action="https://script.google.com/macros/s/AKfycbxN_LpBbHs8DxtgMPPTaiO-TAA4Q8TDlYz6NZCMZClAFVLKyk-OArMnUlf9PRyyhsxqTw/exec"
+              target="hidden_iframe">
           <div class="form-row">
             <label for="name">Name</label>
             <input id="name" name="name" type="text" required autocomplete="name" />
