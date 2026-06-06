@@ -157,43 +157,45 @@
 })();
 
 // ============================================================
-// 4. Contact form submission via fetch to Apps Script endpoint
+// 4. Contact form submission via hidden iframe + postMessage
 // ============================================================
-
 (function () {
   const form = document.getElementById("contactForm");
   const status = document.getElementById("form-status");
-  if (!form || !status) return;
+  const iframe = document.getElementById("hidden_iframe");
+  if (!form || !status) {
+    console.warn("Contact form or status element not present.");
+    return;
+  }
 
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxN_LpBbHs8DxtgMPPTaiO-TAA4Q8TDlYz6NZCMZClAFVLKyk-OArMnUlf9PRyyhsxqTw/exec";
-
+  // When the form is submitted the browser performs a native POST and loads
+  // the response into the hidden iframe, bypassing CORS entirely.
   form.addEventListener("submit", function (e) {
-    // Prevent the default form submission from navigating the page
-    e.preventDefault();
     status.textContent = "Sending…";
 
-    // Collect all form fields into a FormData object
-    const data = new FormData(form);
+    // Failsafe timeout if no postMessage is received from the iframe
+    form._sendTimeout = setTimeout(() => {
+      status.textContent = "Still sending — if this persists, please email cufirst.info@gmail.com";
+    }, 12000);
+  });
 
-    // Send the form data to the Apps Script endpoint via AJAX
-    fetch(SCRIPT_URL, {
-      method: "POST",
-      body: data
-    })
-    .then(res => {
-      // Update the status message based on whether the request succeeded
-      if (res.ok) {
+  // Accept postMessage from the Apps Script iframe response.
+  // No origin check — Apps Script may respond from script.googleusercontent.com
+  // and the payload contains no sensitive data.
+  window.addEventListener(
+    "message",
+    function (ev) {
+      const data = ev.data || {};
+      if (form._sendTimeout) {
+        clearTimeout(form._sendTimeout);
+        form._sendTimeout = null;
+      }
+      if (data.status === "success") {
         status.textContent = "Message sent successfully. Thank you!";
         form.reset();
-      }
-    })
-    .catch(() => {
-      // Network error or the request was blocked entirely
-      status.textContent = "Error sending message. Please try again.";
-    });
-  });
-})();
-
+      } else if (data.status === "error") {
+        const msg = data.message ? String(data.message) : "Please try again.";
+        status.textCon
 // ============================================================
 // 5. Hero slideshow: auto-cycle, indicators, controls, pause on hover
 // ============================================================
