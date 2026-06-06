@@ -195,7 +195,12 @@
         form.reset();
       } else if (data.status === "error") {
         const msg = data.message ? String(data.message) : "Please try again.";
-        status.textCon
+        status.textContent = "Error sending message: " + msg;
+      }
+    },
+    false
+  );
+})();
 // ============================================================
 // 5. Hero slideshow: auto-cycle, indicators, controls, pause on hover
 // ============================================================
