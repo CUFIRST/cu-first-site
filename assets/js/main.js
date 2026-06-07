@@ -1,7 +1,7 @@
 // ============================================================
 // CU FIRST — Main JavaScript
 // Handles: mobile nav, footer year, event rendering, and form submission iframe handler
-// Updated June 06/2026 - Spencer Rodrigues
+// Updated October 11/2025 - James Neumann
 // ============================================================
 
 // -----------------------------
@@ -198,10 +198,6 @@
         status.textContent = "Error sending message: " + msg;
       }
     },
-    // DEBUG — log all postMessages to find the correct origin
-  window.addEventListener("message", function (ev) {
-    console.log("postMessage received from:", ev.origin, ev.data);
-  }, 
     false
   );
 })();
