@@ -1,7 +1,7 @@
 // ============================================================
 // CU FIRST — Main JavaScript
 // Handles: mobile nav, footer year, event rendering, and form submission iframe handler
-// Updated October 11/2025 - James Neumann
+// Updated June 06/2026 - Spencer Rodrigues
 // ============================================================
 
 // -----------------------------
@@ -175,7 +175,7 @@
 
     // Failsafe timeout if no postMessage is received from the iframe
     form._sendTimeout = setTimeout(() => {
-      status.textContent = "Still sending — if this persists, please email cufirst.info@gmail.com";
+      status.textContent = "Success! — if you don't hear from us within 24 hours, please email cufirst.info@gmail.com";
     }, 12000);
   });
 
