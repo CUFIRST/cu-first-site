@@ -127,26 +127,76 @@
       // ---- render ----
       const data = JSON.parse(holder.getAttribute("data-events") || "[]");
 
-      holder.innerHTML = data
-        .map((ev) => {
-          const { start, end } = extractEventDates(ev);
-          let dateText;
-          if (start && end) dateText = fmtDateRange(start, end);
-          else if (start) dateText = fmtDate(start);
-          else dateText = "Date TBA";
+holder.innerHTML = data
+  .map((ev) => {
+    const { start, end } = extractEventDates(ev);
 
-          const titleHtml = ev.title || "";
+    let dateText;
+    if (start && end) {
+      dateText = fmtDateRange(start, end);
+    } else if (start) {
+      dateText = fmtDate(start);
+    } else {
+      dateText = "Date TBA";
+    }
+
+    const titleHtml = escapeHtml(ev.title || "");
+
+    // -----------------------------
+    // Event links
+    // -----------------------------
+    let linksHtml = "";
+
+    // Multiple named links
+    if (Array.isArray(ev.links)) {
+      linksHtml = ev.links
+        .filter(link => link && link.url)
+        .map(link => {
+          const label = escapeHtml(link.label || "Details");
+          const url = escapeHtml(link.url);
 
           return `
-            <article class="card">
-              <h3>${titleHtml}</h3>
-              <div class="meta">${escapeHtml(dateText)} — ${escapeHtml(ev.location || "TBD")}</div>
-              <p>${escapeHtml(ev.desc || "")}</p>
-              ${ev.link && ev.link !== "#" ? `<p><a href="${ev.link}" target="_blank" rel="noopener">Details</a></p>` : ""}
-            </article>
+            <a href="${url}" target="_blank" rel="noopener">
+              ${label}
+            </a>
           `;
         })
-        .join("");
+        .join("<br>");
+    }
+
+    // Single link
+    else if (ev.link && ev.link !== "#") {
+      const url = escapeHtml(ev.link);
+
+      linksHtml = `
+        <a href="${url}" target="_blank" rel="noopener">
+          Details
+        </a>
+      `;
+    }
+
+    return `
+      <article class="card">
+        <h3>${titleHtml}</h3>
+
+        <div class="meta">
+          ${escapeHtml(dateText)} —
+          ${escapeHtml(ev.location || "TBD")}
+        </div>
+
+        <p>
+          ${escapeHtml(ev.desc || "")}
+        </p>
+
+        ${
+          linksHtml
+            ? `<p class="event-links">${linksHtml}</p>`
+            : ""
+        }
+      </article>
+    `;
+  })
+  .join("");
     } catch (err) {
       console.error("Failed to parse events", err);
     }
