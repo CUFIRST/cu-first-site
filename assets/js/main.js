@@ -254,6 +254,7 @@ holder.innerHTML = data
     if (form.querySelector('[name="name"]') && form.querySelector('[name="email"]') && form.querySelector('[name="message"]')) {
       const name = form.querySelector('[name="name"]').value || "Anonymous";
       const email = form.querySelector('[name="email"]').value || "No email provided";
+      const role = form.querySelector('[name="role"]').value || "No role provided";
       const message = form.querySelector('[name="message"]').value || "No message provided";
 
       const discordPayload = {
@@ -270,6 +271,11 @@ holder.innerHTML = data
               {
                 name: "Email",
                 value: email,
+                inline: false,
+              },
+              {
+                name: "Role",
+                value: role,
                 inline: false,
               },
               {
