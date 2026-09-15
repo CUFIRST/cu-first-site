@@ -207,123 +207,125 @@ holder.innerHTML = data
 })();
 
 // ============================================================
-// 4. Contact form submission via hidden iframe + postMessage
+// 4. Contact form submission via hidden iframe + postMessage + Discord webhook
 // ============================================================
 (function () {
   const form = document.getElementById("contactForm");
   const status = document.getElementById("form-status");
   const iframe = document.getElementById("hidden_iframe");
-  const CONTACT_ENDPOINT = "https://contact-form.cufirst-info.workers.dev";
-
+  const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1549518453063549029/6YcGaOwY0TjwSube6O0GQOCgLcJ54Cs9cdS-VAmV4-zzfKZUn0mvVm4MwdIeYoM-DDEx";
+  
   if (!form || !status) {
     console.warn("Contact form or status element not present.");
     return;
   }
 
-  function sendToWorker() {
-    if (!CONTACT_ENDPOINT || CONTACT_ENDPOINT.includes("YOUR_WORKER_URL")) {
-      console.warn("Cloudflare Worker endpoint is not configured yet.");
-      return Promise.resolve(false);
+  // Track submission state
+  form._submissionState = {
+    discordSuccess: null,
+  };
+
+  function checkSubmissionComplete() {
+    const state = form._submissionState;
+    if (state.discordSuccess === null) {
+      return; // Still waiting for Discord response
     }
 
-    const formData = new FormData(form);
-    const payload = {
-      name: String(formData.get("name") || "").trim(),
-      email: String(formData.get("email") || "").trim(),
-      role: String(formData.get("role") || "").trim(),
-      message: String(formData.get("message") || "").trim()
-    };
-
-    if (!payload.name && !payload.email && !payload.message) {
-      return Promise.resolve(false);
+    if (form._sendTimeout) {
+      clearTimeout(form._sendTimeout);
+      form._sendTimeout = null;
     }
 
-    return fetch(CONTACT_ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    }).then(async (response) => {
-      let data = {};
-      try {
-        data = await response.json();
-      } catch (err) {
-        // Worker is expected to return JSON; ignore parse failures here.
-      }
-
-      if (!response.ok || !data.success) {
-        throw new Error("Worker responded with status " + response.status);
-      }
-      return true;
-    }).catch((error) => {
-      console.error("Cloudflare Worker submission failed:", error);
-      return false;
-    });
-  }
-
-  form.addEventListener("submit", async function (event) {
-    event.preventDefault();
-    status.textContent = "Sending…";
-
-    const workerPromise = sendToWorker();
-
-    // keep the original Apps Script pipeline alive in parallel
-    form.submit();
-
-    const workerOk = await workerPromise;
-
-    if (workerOk) {
+    if (state.discordSuccess) {
       status.textContent = "Message sent successfully. Thank you!";
       form.reset();
     } else {
-      status.textContent = "We couldn't send your message right now. Please email cufirst.info@gmail.com";
+      status.textContent = "Error sending message. Please email us at cufirst.info@gmail.com";
     }
+  }
+
+  // When the form is submitted the browser performs a native POST and loads
+  // the response into the hidden iframe, bypassing CORS entirely.
+  form.addEventListener("submit", function (e) {
+    status.textContent = "Sending…";
+    form._submissionState = { discordSuccess: null };
+
+    // Send to Discord webhook
+    if (form.querySelector('[name="name"]') && form.querySelector('[name="email"]') && form.querySelector('[name="message"]')) {
+      const name = form.querySelector('[name="name"]').value || "Anonymous";
+      const email = form.querySelector('[name="email"]').value || "No email provided";
+      const message = form.querySelector('[name="message"]').value || "No message provided";
+
+      const discordPayload = {
+        embeds: [
+          {
+            title: "New Contact Form Submission",
+            color: 16711680, // Red color
+            fields: [
+              {
+                name: "Name",
+                value: name,
+                inline: false,
+              },
+              {
+                name: "Email",
+                value: email,
+                inline: false,
+              },
+              {
+                name: "Message",
+                value: message,
+                inline: false,
+              },
+            ],
+            timestamp: new Date().toISOString(),
+          },
+        ],
+      };
+
+      fetch(DISCORD_WEBHOOK, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(discordPayload),
+      })
+        .then((response) => {
+          form._submissionState.discordSuccess = response.ok;
+          checkSubmissionComplete();
+        })
+        .catch((err) => {
+          console.error("Failed to send Discord webhook:", err);
+          form._submissionState.discordSuccess = false;
+          checkSubmissionComplete();
+        });
+    } else {
+      form._submissionState.discordSuccess = false;
+      checkSubmissionComplete();
+    }
+
+    // Failsafe timeout if Discord doesn't respond
+    form._sendTimeout = setTimeout(() => {
+      if (form._submissionState.discordSuccess === null) {
+        form._submissionState.discordSuccess = false;
+        checkSubmissionComplete();
+      }
+    }, 8000);
   });
 
-  // No longer rely on the Apps Script iframe for UI status messages because it
-  // does not send a success payload back to the page.
+  // Keep iframe postMessage listener for Apps Script form submission (silent)
   window.addEventListener(
     "message",
     function (ev) {
       const data = ev.data || {};
-      if (form._sendTimeout) {
-        clearTimeout(form._sendTimeout);
-        form._sendTimeout = null;
-      }
-      if (data.status === "error") {
-        const msg = data.message ? String(data.message) : "Please try again.";
-        status.textContent = "Error sending message: " + msg;
+      // Just log for debugging, don't update status anymore
+      if (data.status === "success") {
+        console.log("Form saved to Apps Script");
+      } else if (data.status === "error") {
+        console.error("Apps Script error:", data.message);
       }
     },
     false
   );
-})();
-
-
-// Ensure hero fills the remaining viewport height under the header (max vertical)
-(function(){
-  function setHeroMaxHeight(){
-    const header = document.querySelector('.site-header');
-    const hero = document.querySelector('.hero');
-    if(!hero) return;
-    const headerH = header ? header.getBoundingClientRect().height : 0;
-    // set CSS custom property or inline style - inline is simplest and reliable:
-    const vh = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
-    const target = Math.max(360, Math.floor(vh - headerH)); // ensure a sensible min height
-    hero.style.minHeight = target + 'px';
-    hero.style.height = target + 'px';
-  }
-
-  // debounce helper
-  let t;
-  function onResize(){
-    clearTimeout(t);
-    t = setTimeout(setHeroMaxHeight, 120);
-  }
-
-  // init
-  window.addEventListener('load', setHeroMaxHeight);
-  window.addEventListener('resize', onResize);
-  // also call right away in case script loads after DOM ready
-  setHeroMaxHeight();
 })();
 
