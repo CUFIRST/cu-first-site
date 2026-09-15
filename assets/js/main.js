@@ -213,15 +213,62 @@ holder.innerHTML = data
   const form = document.getElementById("contactForm");
   const status = document.getElementById("form-status");
   const iframe = document.getElementById("hidden_iframe");
+  const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1549510667755593858/7JU7GDPkz5BVUeGgsLMs8CMC9frRgrANLADRQvONzsvyN9fssa_koIo8qoPwMNpoZiRY";
+
   if (!form || !status) {
     console.warn("Contact form or status element not present.");
     return;
   }
 
-  // When the form is submitted the browser performs a native POST and loads
-  // the response into the hidden iframe, bypassing CORS entirely.
-  form.addEventListener("submit", function (e) {
+  function sendToDiscord() {
+    if (!DISCORD_WEBHOOK_URL) return Promise.resolve();
+
+    const formData = new FormData(form);
+    const name = String(formData.get("name") || "").trim();
+    const email = String(formData.get("email") || "").trim();
+    const role = String(formData.get("role") || "").trim();
+    const message = String(formData.get("message") || "").trim();
+
+    if (!name && !email && !message) {
+      return Promise.resolve();
+    }
+
+    const payload = {
+      username: "CU FIRST Contact Form",
+      embeds: [
+        {
+          title: "New contact form submission",
+          color: 0x1f8fff,
+          fields: [
+            { name: "Name", value: name || "Unknown", inline: true },
+            { name: "Email", value: email || "Unknown", inline: true },
+            { name: "Role", value: role || "Not provided", inline: true },
+            { name: "Message", value: message || "No message provided" }
+          ],
+          timestamp: new Date().toISOString()
+        }
+      ]
+    };
+
+    return fetch(DISCORD_WEBHOOK_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    }).then((response) => {
+      if (!response.ok) {
+        throw new Error("Discord responded with status " + response.status);
+      }
+    }).catch((error) => {
+      console.error("Discord webhook submission failed:", error);
+    });
+  }
+
+  // Keep the current iframe-based submit flow working exactly as before,
+  // while also notifying Discord in parallel for the same form entry.
+  form.addEventListener("submit", function () {
     status.textContent = "Sending…";
+
+    sendToDiscord();
 
     // Failsafe timeout if no postMessage is received from the iframe
     form._sendTimeout = setTimeout(() => {
@@ -250,78 +297,6 @@ holder.innerHTML = data
     },
     false
   );
-})();
-// ============================================================
-// 5. Hero slideshow: auto-cycle, indicators, controls, pause on hover
-// ============================================================
-(function () {
-  const wrapper = document.getElementById("hero-slideshow");
-  if (!wrapper) return;
-
-  const slides = Array.from(wrapper.querySelectorAll(".slide"));
-  const indicators = Array.from(wrapper.querySelectorAll(".indicator"));
-  const prevBtn = wrapper.querySelector(".slide-control.prev");
-  const nextBtn = wrapper.querySelector(".slide-control.next");
-
-  let current = 0;
-  let interval = null;
-  const INTERVAL_MS = 5000; // cycle every 5s
-
-  function show(index, { user = false } = {}) {
-    index = (index + slides.length) % slides.length;
-    slides.forEach((s, i) => {
-      const active = i === index;
-      s.classList.toggle("active", active);
-      s.setAttribute("aria-hidden", String(!active));
-    });
-    indicators.forEach((btn, i) => {
-      if (btn) btn.setAttribute("aria-pressed", String(i === index));
-    });
-    current = index;
-    // if user manually navigates, restart autoplay
-    if (user) {
-      stop();
-      start();
-    }
-  }
-
-  function next() { show(current + 1, { user: false }); }
-  function prev() { show(current - 1, { user: false }); }
-
-  function start() {
-    if (interval) return;
-    interval = setInterval(next, INTERVAL_MS);
-  }
-  function stop() {
-    if (!interval) return;
-    clearInterval(interval);
-    interval = null;
-  }
-
-  // controls
-  if (prevBtn) prevBtn.addEventListener("click", () => { prev(); show(current, { user: true }); });
-  if (nextBtn) nextBtn.addEventListener("click", () => { next(); show(current, { user: true }); });
-
-  // indicators
-  indicators.forEach((btn, idx) => {
-    btn.addEventListener("click", () => { show(idx, { user: true }); });
-  });
-
-  // keyboard access
-  wrapper.addEventListener("keydown", (ev) => {
-    if (ev.key === "ArrowLeft") { prev(); show(current, { user: true }); }
-    if (ev.key === "ArrowRight") { next(); show(current, { user: true }); }
-  });
-
-  // pause on hover/focus
-  wrapper.addEventListener("mouseenter", stop);
-  wrapper.addEventListener("mouseleave", start);
-  wrapper.addEventListener("focusin", stop);
-  wrapper.addEventListener("focusout", start);
-
-  // initialize
-  show(0);
-  start();
 })();
 
 
