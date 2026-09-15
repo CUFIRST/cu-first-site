@@ -207,7 +207,115 @@ holder.innerHTML = data
 })();
 
 // ============================================================
-// 4. Contact form submission via hidden iframe + postMessage + Discord webhook
+// 4. Hero slideshow
+// ============================================================
+(function () {
+  const slideshow = document.getElementById("hero-slideshow");
+  if (!slideshow) return;
+
+  const slides = Array.from(slideshow.querySelectorAll(".slide"));
+  if (slides.length < 2) return;
+
+  const controls = slideshow.querySelector(".slideshow-controls");
+  const dots = slideshow.querySelector(".slideshow-dots");
+  const pauseButton = slideshow.querySelector('[data-slide-action="toggle"]');
+  const maxVisibleDots = 5;
+  let currentIndex = slides.findIndex((slide) => slide.classList.contains("active"));
+  if (currentIndex < 0) currentIndex = 0;
+  let manuallyPaused = false;
+  let temporarilyPaused = false;
+
+  function updateControls() {
+    if (!dots) return;
+
+    const visibleDotCount = Math.min(maxVisibleDots, slides.length);
+    const firstVisibleIndex = Math.min(
+      Math.max(0, currentIndex - Math.floor(visibleDotCount / 2)),
+      slides.length - visibleDotCount
+    );
+
+    Array.from(dots.children).forEach((dot, position) => {
+      const slideIndex = firstVisibleIndex + position;
+      const selected = slideIndex === currentIndex;
+      dot.dataset.slideIndex = String(slideIndex);
+      dot.classList.toggle("active", selected);
+      dot.setAttribute("aria-current", selected ? "true" : "false");
+      dot.setAttribute("aria-label", `Show slide ${slideIndex + 1}`);
+    });
+  }
+
+  function showSlide(index) {
+    slides[currentIndex].classList.remove("active");
+    slides[currentIndex].setAttribute("aria-hidden", "true");
+    currentIndex = (index + slides.length) % slides.length;
+    slides[currentIndex].classList.add("active");
+    slides[currentIndex].setAttribute("aria-hidden", "false");
+    updateControls();
+  }
+
+  function shouldPause() {
+    return manuallyPaused || temporarilyPaused;
+  }
+
+  function updatePauseButton() {
+    if (!pauseButton) return;
+    const paused = manuallyPaused;
+    pauseButton.setAttribute("aria-label", paused ? "Play slideshow" : "Pause slideshow");
+    pauseButton.innerHTML = paused ? "&#9654;" : "&#10074;&#10074;";
+  }
+
+  if (dots) {
+    const visibleDotCount = Math.min(maxVisibleDots, slides.length);
+    Array.from({ length: visibleDotCount }, () => {
+      const dot = document.createElement("button");
+      dot.type = "button";
+      dot.className = "slideshow-dot";
+      dot.addEventListener("click", () => {
+        showSlide(Number(dot.dataset.slideIndex));
+      });
+      dots.appendChild(dot);
+    });
+  }
+
+  if (controls) {
+    controls.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-slide-action]");
+      if (!button) return;
+
+      const action = button.dataset.slideAction;
+      if (action === "previous") showSlide(currentIndex - 1);
+      if (action === "next") showSlide(currentIndex + 1);
+      if (action === "toggle") {
+        manuallyPaused = !manuallyPaused;
+        updatePauseButton();
+      }
+    });
+
+    controls.addEventListener("mouseenter", () => {
+      temporarilyPaused = true;
+    });
+    controls.addEventListener("mouseleave", () => {
+      temporarilyPaused = false;
+    });
+  }
+
+  slideshow.addEventListener("focusin", () => {
+    temporarilyPaused = true;
+  });
+  slideshow.addEventListener("focusout", (event) => {
+    if (!slideshow.contains(event.relatedTarget)) temporarilyPaused = false;
+  });
+
+  updateControls();
+  updatePauseButton();
+
+  setInterval(() => {
+    if (!shouldPause()) showSlide(currentIndex + 1);
+  }, 6000);
+})();
+
+// ============================================================
+// 5. Contact form submission via hidden iframe + postMessage + Discord webhook
 // ============================================================
 (function () {
   const form = document.getElementById("contactForm");
@@ -240,7 +348,7 @@ holder.innerHTML = data
       status.textContent = "Message sent successfully. Thank you!";
       form.reset();
     } else {
-      status.textContent = "Error sending message. Please email us at cufirst.info@gmail.com";
+      status.textContent = "Error sending message. Please email us at cufirst.info+contact@gmail.com";
     }
   }
 
