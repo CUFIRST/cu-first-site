@@ -213,72 +213,74 @@ holder.innerHTML = data
   const form = document.getElementById("contactForm");
   const status = document.getElementById("form-status");
   const iframe = document.getElementById("hidden_iframe");
-  const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1549510667755593858/7JU7GDPkz5BVUeGgsLMs8CMC9frRgrANLADRQvONzsvyN9fssa_koIo8qoPwMNpoZiRY";
+  const CONTACT_ENDPOINT = "https://contact-form.cufirst-info.workers.dev";
 
   if (!form || !status) {
     console.warn("Contact form or status element not present.");
     return;
   }
 
-  function sendToDiscord() {
-    if (!DISCORD_WEBHOOK_URL) return Promise.resolve();
-
-    const formData = new FormData(form);
-    const name = String(formData.get("name") || "").trim();
-    const email = String(formData.get("email") || "").trim();
-    const role = String(formData.get("role") || "").trim();
-    const message = String(formData.get("message") || "").trim();
-
-    if (!name && !email && !message) {
-      return Promise.resolve();
+  function sendToWorker() {
+    if (!CONTACT_ENDPOINT || CONTACT_ENDPOINT.includes("YOUR_WORKER_URL")) {
+      console.warn("Cloudflare Worker endpoint is not configured yet.");
+      return Promise.resolve(false);
     }
 
+    const formData = new FormData(form);
     const payload = {
-      username: "CU FIRST Contact Form",
-      embeds: [
-        {
-          title: "New contact form submission",
-          color: 0x1f8fff,
-          fields: [
-            { name: "Name", value: name || "Unknown", inline: true },
-            { name: "Email", value: email || "Unknown", inline: true },
-            { name: "Role", value: role || "Not provided", inline: true },
-            { name: "Message", value: message || "No message provided" }
-          ],
-          timestamp: new Date().toISOString()
-        }
-      ]
+      name: String(formData.get("name") || "").trim(),
+      email: String(formData.get("email") || "").trim(),
+      role: String(formData.get("role") || "").trim(),
+      message: String(formData.get("message") || "").trim()
     };
 
-    return fetch(DISCORD_WEBHOOK_URL, {
+    if (!payload.name && !payload.email && !payload.message) {
+      return Promise.resolve(false);
+    }
+
+    return fetch(CONTACT_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
-    }).then((response) => {
-      if (!response.ok) {
-        throw new Error("Discord responded with status " + response.status);
+    }).then(async (response) => {
+      let data = {};
+      try {
+        data = await response.json();
+      } catch (err) {
+        // Worker is expected to return JSON; ignore parse failures here.
       }
+
+      if (!response.ok || !data.success) {
+        throw new Error("Worker responded with status " + response.status);
+      }
+      return true;
     }).catch((error) => {
-      console.error("Discord webhook submission failed:", error);
+      console.error("Cloudflare Worker submission failed:", error);
+      return false;
     });
   }
 
-  // Keep the current iframe-based submit flow working exactly as before,
-  // while also notifying Discord in parallel for the same form entry.
-  form.addEventListener("submit", function () {
+  form.addEventListener("submit", async function (event) {
+    event.preventDefault();
     status.textContent = "Sending…";
 
-    sendToDiscord();
+    const workerPromise = sendToWorker();
 
-    // Failsafe timeout if no postMessage is received from the iframe
-    form._sendTimeout = setTimeout(() => {
-      status.textContent = "Success! — if you don't hear from us within 24 hours, please email cufirst.info@gmail.com";
-    }, 12000);
+    // keep the original Apps Script pipeline alive in parallel
+    form.submit();
+
+    const workerOk = await workerPromise;
+
+    if (workerOk) {
+      status.textContent = "Message sent successfully. Thank you!";
+      form.reset();
+    } else {
+      status.textContent = "We couldn't send your message right now. Please email cufirst.info@gmail.com";
+    }
   });
 
-  // Accept postMessage from the Apps Script iframe response.
-  // No origin check — Apps Script may respond from script.googleusercontent.com
-  // and the payload contains no sensitive data.
+  // No longer rely on the Apps Script iframe for UI status messages because it
+  // does not send a success payload back to the page.
   window.addEventListener(
     "message",
     function (ev) {
@@ -287,10 +289,7 @@ holder.innerHTML = data
         clearTimeout(form._sendTimeout);
         form._sendTimeout = null;
       }
-      if (data.status === "success") {
-        status.textContent = "Message sent successfully. Thank you!";
-        form.reset();
-      } else if (data.status === "error") {
+      if (data.status === "error") {
         const msg = data.message ? String(data.message) : "Please try again.";
         status.textContent = "Error sending message: " + msg;
       }
