@@ -228,8 +228,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--red);outline-off
 }
 /* keep heading/button coloring (no changes to variables) */
 .hero-center h1 { color:var(--white); text-shadow:0 3px 8px rgba(0,0,0,.95), 0 1px 2px rgba(0,0,0,.9); margin-top: 4rem; margin-bottom: 4rem; }
-.hero-center .lead,
-.hero-center .btn { text-shadow:0 2px 5px rgba(0,0,0,.9); }
+.hero-center .lead { text-shadow:0 2px 5px rgba(0,0,0,.9); }
 
 /* Temporaily disabled to reduce landing page text clutter over hero slide show */ 
 /* .hero-center .lead { color:var(--white); text-shadow:0 6px 18px rgba(0,0,0,0.6); font-weight: bold; font-size: large; margin-top: 9rem; } */
