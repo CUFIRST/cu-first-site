@@ -360,41 +360,54 @@ holder.innerHTML = data
 
     // Send to Discord webhook
     if (form.querySelector('[name="name"]') && form.querySelector('[name="email"]') && form.querySelector('[name="message"]')) {
-      const name = form.querySelector('[name="name"]').value || "Anonymous";
-      const email = form.querySelector('[name="email"]').value || "No email provided";
-      const role = form.querySelector('[name="role"]').value || "No role provided";
-      const message = form.querySelector('[name="message"]').value || "No message provided";
+      const getFieldValue = (fieldName, fallback) => {
+        return form.querySelector(`[name="${fieldName}"]`).value || fallback;
+      };
+
+      const DISCORD_EMBED_LIMIT = 6000;
+      const MAX_FIELD_CHARS = 1024;
+
+      const contactFields = [
+        { name: "Name", value: getFieldValue("name", "Anonymous") },
+        { name: "Email", value: getFieldValue("email", "No email provided") },
+        { name: "Role", value: getFieldValue("role", "No role provided") },
+        { name: "Message", value: getFieldValue("message", "No message provided") },
+      ];
+      const discordFields = contactFields.flatMap(({ name, value }) => {
+        const chunks = value.match(new RegExp(`[^]{1,${MAX_FIELD_CHARS}}`, "g")) || ["No value provided"];
+        return chunks.map((chunk, index) => ({
+          name: index === 0 ? name : `${name} (continued)`,
+          value: chunk,
+          inline: false,
+        }));
+      });
+
+      const embeds = [];
+      let currentFields = [];
+      let currentLength = 0;
+      discordFields.forEach((field) => {
+        const fieldLength = field.name.length + field.value.length;
+        if (currentFields.length && currentLength + fieldLength > DISCORD_EMBED_LIMIT) {
+          embeds.push(currentFields);
+          currentFields = [];
+          currentLength = 0;
+        }
+        currentFields.push(field);
+        currentLength += fieldLength;
+      });
+      if (currentFields.length) {
+        embeds.push(currentFields);
+      }
+      const embedCount = embeds.length;
 
       const discordPayload = {
-        embeds: [
-          {
-            title: "New Contact Form Submission",
-            color: 16711680, // Red color
-            fields: [
-              {
-                name: "Name",
-                value: name,
-                inline: false,
-              },
-              {
-                name: "Email",
-                value: email,
-                inline: false,
-              },
-              {
-                name: "Role",
-                value: role,
-                inline: false,
-              },
-              {
-                name: "Message",
-                value: message,
-                inline: false,
-              },
-            ],
-            timestamp: new Date().toISOString(),
-          },
-        ],
+        embeds: embeds.map((fields, index) => ({
+          title: index === 0 ? "New Contact Form Submission" : undefined,
+          color: 16711680,
+          fields,
+          footer: { text: `${index + 1}/${embedCount}` },
+          timestamp: new Date().toISOString(),
+        })),
       };
 
       fetch(DISCORD_WEBHOOK, {
