@@ -392,6 +392,4 @@ holder.innerHTML = data
   if (!form.action || !discordProxyUrl) {
     console.warn("One or more contact form endpoints are missing.");
   }
-
 })();
-
