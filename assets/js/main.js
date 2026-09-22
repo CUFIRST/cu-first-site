@@ -315,14 +315,13 @@ holder.innerHTML = data
 })();
 
 // ============================================================
-// 5. Contact form submission via hidden iframe + postMessage + Discord webhook
+// 5. Contact form submission via hidden iframe + postMessage
 // ============================================================
 (function () {
   const form = document.getElementById("contactForm");
   const status = document.getElementById("form-status");
   const iframe = document.getElementById("hidden_iframe");
-  const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1549518453063549029/6YcGaOwY0TjwSube6O0GQOCgLcJ54Cs9cdS-VAmV4-zzfKZUn0mvVm4MwdIeYoM-DDEx";
-  
+
   if (!form || !status) {
     console.warn("Contact form or status element not present.");
     return;
@@ -330,13 +329,18 @@ holder.innerHTML = data
 
   // Track submission state
   form._submissionState = {
-    discordSuccess: null,
+    submitted: false,
+    success: null
   };
 
+  // ------------------------------------------------------------
+  // Check whether the Apps Script submission completed
+  // ------------------------------------------------------------
   function checkSubmissionComplete() {
     const state = form._submissionState;
-    if (state.discordSuccess === null) {
-      return; // Still waiting for Discord response
+
+    if (state.success === null) {
+      return;
     }
 
     if (form._sendTimeout) {
@@ -344,115 +348,64 @@ holder.innerHTML = data
       form._sendTimeout = null;
     }
 
-    if (state.discordSuccess) {
+    if (state.success === true) {
       status.textContent = "Message sent successfully. Thank you!";
       form.reset();
     } else {
-      status.textContent = "Error sending message. Please email us at cufirst.info+contact@gmail.com";
+      status.textContent =
+        "Error sending message. Please email us at cufirst.info+contact@gmail.com";
     }
   }
 
-  // When the form is submitted the browser performs a native POST and loads
-  // the response into the hidden iframe, bypassing CORS entirely.
-  form.addEventListener("submit", function (e) {
+  // ------------------------------------------------------------
+  // Form submission
+  // ------------------------------------------------------------
+  form.addEventListener("submit", function () {
     status.textContent = "Sending…";
-    form._submissionState = { discordSuccess: null };
 
-    // Send to Discord webhook
-    if (form.querySelector('[name="name"]') && form.querySelector('[name="email"]') && form.querySelector('[name="message"]')) {
-      const getFieldValue = (fieldName, fallback) => {
-        return form.querySelector(`[name="${fieldName}"]`).value || fallback;
-      };
+    form._submissionState = {
+      submitted: true,
+      success: null
+    };
 
-      const DISCORD_EMBED_LIMIT = 6000;
-      const MAX_FIELD_CHARS = 1024;
-
-      const contactFields = [
-        { name: "Name", value: getFieldValue("name", "Anonymous") },
-        { name: "Email", value: getFieldValue("email", "No email provided") },
-        { name: "Role", value: getFieldValue("role", "No role provided") },
-        { name: "Message", value: getFieldValue("message", "No message provided") },
-      ];
-      const discordFields = contactFields.flatMap(({ name, value }) => {
-        const chunks = value.match(new RegExp(`[^]{1,${MAX_FIELD_CHARS}}`, "g")) || ["No value provided"];
-        return chunks.map((chunk, index) => ({
-          name: index === 0 ? name : `${name} (continued)`,
-          value: chunk,
-          inline: false,
-        }));
-      });
-
-      const embeds = [];
-      let currentFields = [];
-      let currentLength = 0;
-      discordFields.forEach((field) => {
-        const fieldLength = field.name.length + field.value.length;
-        if (currentFields.length && currentLength + fieldLength > DISCORD_EMBED_LIMIT) {
-          embeds.push(currentFields);
-          currentFields = [];
-          currentLength = 0;
-        }
-        currentFields.push(field);
-        currentLength += fieldLength;
-      });
-      if (currentFields.length) {
-        embeds.push(currentFields);
-      }
-      const embedCount = embeds.length;
-
-      const discordPayload = {
-        embeds: embeds.map((fields, index) => ({
-          title: index === 0 ? "New Contact Form Submission" : undefined,
-          color: 16711680,
-          fields,
-          footer: { text: `${index + 1}/${embedCount}` },
-          timestamp: new Date().toISOString(),
-        })),
-      };
-
-      fetch(DISCORD_WEBHOOK, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(discordPayload),
-      })
-        .then((response) => {
-          form._submissionState.discordSuccess = response.ok;
-          checkSubmissionComplete();
-        })
-        .catch((err) => {
-          console.error("Failed to send Discord webhook:", err);
-          form._submissionState.discordSuccess = false;
-          checkSubmissionComplete();
-        });
-    } else {
-      form._submissionState.discordSuccess = false;
-      checkSubmissionComplete();
-    }
-
-    // Failsafe timeout if Discord doesn't respond
+    // Give the Apps Script iframe time to submit.
+    // The actual success/failure is handled by postMessage below.
     form._sendTimeout = setTimeout(() => {
-      if (form._submissionState.discordSuccess === null) {
-        form._submissionState.discordSuccess = false;
+      if (form._submissionState.success === null) {
+        console.error("Form submission timed out.");
+
+        form._submissionState.success = false;
         checkSubmissionComplete();
       }
-    }, 8000);
+    }, 10000);
   });
 
-  // Keep iframe postMessage listener for Apps Script form submission (silent)
+  // ------------------------------------------------------------
+  // Listen for the Google Apps Script response
+  // ------------------------------------------------------------
   window.addEventListener(
     "message",
     function (ev) {
       const data = ev.data || {};
-      // Just log for debugging, don't update status anymore
+
+      console.log("Received form response:", data);
+
+      // Apps Script says submission was successful
       if (data.status === "success") {
-        console.log("Form saved to Apps Script");
-      } else if (data.status === "error") {
+        console.log("Form saved successfully.");
+
+        form._submissionState.success = true;
+        checkSubmissionComplete();
+      }
+
+      // Apps Script says submission failed
+      else if (data.status === "error") {
         console.error("Apps Script error:", data.message);
+
+        form._submissionState.success = false;
+        checkSubmissionComplete();
       }
     },
     false
   );
 })();
-
