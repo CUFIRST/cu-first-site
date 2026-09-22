@@ -179,22 +179,19 @@
         <p>Fill out the form below, or email us directly at <a href="mailto:cufirst.info+contact@gmail.com">cufirst.info+contact@gmail.com</a>.</p>
 
 
-        <!-- Hidden iframe target for form submission (keeps page from navigating) -->
-        <iframe name="hidden_iframe" id="hidden_iframe" style="display:none;"></iframe>
-
-        <!-- Contact form posts to Apps Script exec URL; response loads into the hidden iframe -->
+        <!-- Contact form submits independently to both Apps Script endpoints. -->
         <form class="contact-form" id="contactForm"
               method="post"
               action="https://script.google.com/macros/s/AKfycbxN_LpBbHs8DxtgMPPTaiO-TAA4Q8TDlYz6NZCMZClAFVLKyk-OArMnUlf9PRyyhsxqTw/exec"
-              target="hidden_iframe">
+              data-discord-proxy-url="https://script.google.com/macros/s/AKfycbyivi1_pdkdQkYF-wruuzSd6mEwymIxUEJtMuAcc3onZu9yXYvdOLKUd8T249mPOfQG/exec">
           <div class="form-row">
             <label for="name">Name</label>
-            <input id="name" name="name" type="text" required autocomplete="name" />
+            <input id="name" name="name" type="text" maxlength="1024" required autocomplete="name" />
           </div>
 
           <div class="form-row">
             <label for="email">Email</label>
-            <input id="email" name="email" type="email" required autocomplete="email" />
+            <input id="email" name="email" type="email" maxlength="1024" required autocomplete="email" />
           </div>
 
           <div class="form-row">
@@ -210,11 +207,14 @@
 
           <div class="form-row">
             <label for="message">Message</label>
-            <textarea id="message" name="message" rows="5" placeholder="Tell us how you’d like to get involved."></textarea>
+            <div class="textarea-wrap">
+              <textarea id="message" name="message" rows="5" maxlength="5120" placeholder="Tell us how you’d like to get involved."></textarea>
+              <span id="message-count" class="character-count" aria-live="polite">0/5120</span>
+            </div>
           </div>
 
           <button class="btn btn-primary" type="submit">Submit</button>
-          <p id="form-status" class="form-note"></p>
+          <p id="form-status" class="form-note" aria-live="polite"></p>
         </form>
 
 

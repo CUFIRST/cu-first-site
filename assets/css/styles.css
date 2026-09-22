@@ -104,7 +104,14 @@ a:hover{text-decoration:underline}
 .form-row{display:grid;gap:.35rem}
 input,select,textarea{padding:.7rem .8rem;border:1px solid var(--border);border-radius:.6rem;font:inherit;background:#fff}
 input:focus,select:focus,textarea:focus{outline:2px solid var(--red);outline-offset:1px}
-.form-note{color:var(--muted);font-size:.95rem}
+.form-note{min-height:1.4em;margin:0;color:var(--muted);font-size:.95rem;font-weight:600}
+.form-note[data-state="sending"]{color:var(--muted)}
+.form-note[data-state="success"]{color:#237a45}
+.form-note[data-state="error"]{color:#a52323}
+.textarea-wrap{position:relative}
+.textarea-wrap textarea{width:100%;padding-bottom:2.2rem;resize:vertical}
+.character-count{position:absolute;right:.75rem;bottom:.65rem;color:var(--muted);font-size:.8rem;font-variant-numeric:tabular-nums;pointer-events:none}
+.character-count[data-limit="reached"]{color:#a52323;font-weight:600}
 
 /* ---- Footer colors/structure ------------------ */
 .site-footer{border-top:1px solid var(--border);padding:1.2rem 0;background:var(--muted2);color:var(--black)}

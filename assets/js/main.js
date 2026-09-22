@@ -315,144 +315,83 @@ holder.innerHTML = data
 })();
 
 // ============================================================
-// 5. Contact form submission via hidden iframe + postMessage + Discord webhook
+// 5. Contact form submission to the existing endpoint and Discord proxy
 // ============================================================
 (function () {
   const form = document.getElementById("contactForm");
   const status = document.getElementById("form-status");
-  const iframe = document.getElementById("hidden_iframe");
-  const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1549518453063549029/6YcGaOwY0TjwSube6O0GQOCgLcJ54Cs9cdS-VAmV4-zzfKZUn0mvVm4MwdIeYoM-DDEx";
-  
+  const message = document.getElementById("message");
+  const messageCount = document.getElementById("message-count");
+
   if (!form || !status) {
     console.warn("Contact form or status element not present.");
     return;
   }
 
-  // Track submission state
-  form._submissionState = {
-    discordSuccess: null,
-  };
+  const discordProxyUrl = form.dataset.discordProxyUrl;
 
-  function checkSubmissionComplete() {
-    const state = form._submissionState;
-    if (state.discordSuccess === null) {
-      return; // Still waiting for Discord response
-    }
-
-    if (form._sendTimeout) {
-      clearTimeout(form._sendTimeout);
-      form._sendTimeout = null;
-    }
-
-    if (state.discordSuccess) {
-      status.textContent = "Message sent successfully. Thank you!";
-      form.reset();
-    } else {
-      status.textContent = "Error sending message. Please email us at cufirst.info+contact@gmail.com";
-    }
+  function updateMessageCount() {
+    if (!message || !messageCount) return;
+    messageCount.textContent = `${message.value.length}/${message.maxLength}`;
+    messageCount.dataset.limit = message.value.length >= message.maxLength ? "reached" : "";
   }
 
-  // When the form is submitted the browser performs a native POST and loads
-  // the response into the hidden iframe, bypassing CORS entirely.
-  form.addEventListener("submit", function (e) {
-    status.textContent = "Sending…";
-    form._submissionState = { discordSuccess: null };
+  if (message) {
+    message.addEventListener("input", updateMessageCount);
+    updateMessageCount();
+  }
 
-    // Send to Discord webhook
-    if (form.querySelector('[name="name"]') && form.querySelector('[name="email"]') && form.querySelector('[name="message"]')) {
-      const getFieldValue = (fieldName, fallback) => {
-        return form.querySelector(`[name="${fieldName}"]`).value || fallback;
-      };
+  function setStatus(message, state) {
+    status.textContent = message;
+    status.dataset.state = state;
+  }
 
-      const DISCORD_EMBED_LIMIT = 6000;
-      const MAX_FIELD_CHARS = 1024;
+  form.addEventListener("submit", function (event) {
+    event.preventDefault();
+    setStatus("Sending…", "sending");
 
-      const contactFields = [
-        { name: "Name", value: getFieldValue("name", "Anonymous") },
-        { name: "Email", value: getFieldValue("email", "No email provided") },
-        { name: "Role", value: getFieldValue("role", "No role provided") },
-        { name: "Message", value: getFieldValue("message", "No message provided") },
-      ];
-      const discordFields = contactFields.flatMap(({ name, value }) => {
-        const chunks = value.match(new RegExp(`[^]{1,${MAX_FIELD_CHARS}}`, "g")) || ["No value provided"];
-        return chunks.map((chunk, index) => ({
-          name: index === 0 ? name : `${name} (continued)`,
-          value: chunk,
-          inline: false,
-        }));
+    const formData = new URLSearchParams(new FormData(form));
+    const request = (endpoint) => fetch(endpoint, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+      },
+      body: formData,
+    });
+    const requestWithTimeout = (endpoint) => Promise.race([
+      request(endpoint),
+      new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Request timed out.")), 30000);
+      }),
+    ]);
+
+    // The existing endpoint is independent and does not control the status message.
+    if (form.action) {
+      request(form.action).catch((error) => {
+        console.error("Existing Apps Script submission failed:", error);
       });
-
-      const embeds = [];
-      let currentFields = [];
-      let currentLength = 0;
-      discordFields.forEach((field) => {
-        const fieldLength = field.name.length + field.value.length;
-        if (currentFields.length && currentLength + fieldLength > DISCORD_EMBED_LIMIT) {
-          embeds.push(currentFields);
-          currentFields = [];
-          currentLength = 0;
-        }
-        currentFields.push(field);
-        currentLength += fieldLength;
-      });
-      if (currentFields.length) {
-        embeds.push(currentFields);
-      }
-      const embedCount = embeds.length;
-
-      const discordPayload = {
-        embeds: embeds.map((fields, index) => ({
-          title: index === 0 ? "New Contact Form Submission" : undefined,
-          color: 16711680,
-          fields,
-          footer: { text: `${index + 1}/${embedCount}` },
-          timestamp: new Date().toISOString(),
-        })),
-      };
-
-      fetch(DISCORD_WEBHOOK, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(discordPayload),
-      })
-        .then((response) => {
-          form._submissionState.discordSuccess = response.ok;
-          checkSubmissionComplete();
-        })
-        .catch((err) => {
-          console.error("Failed to send Discord webhook:", err);
-          form._submissionState.discordSuccess = false;
-          checkSubmissionComplete();
-        });
-    } else {
-      form._submissionState.discordSuccess = false;
-      checkSubmissionComplete();
     }
 
-    // Failsafe timeout if Discord doesn't respond
-    form._sendTimeout = setTimeout(() => {
-      if (form._submissionState.discordSuccess === null) {
-        form._submissionState.discordSuccess = false;
-        checkSubmissionComplete();
-      }
-    }, 8000);
+    if (!discordProxyUrl || discordProxyUrl === "PASTE_NEW_APPS_SCRIPT_EXEC_URL_HERE") {
+      setStatus("Error sending message. Please email us at cufirst.info+contact@gmail.com", "error");
+      return;
+    }
+
+    requestWithTimeout(discordProxyUrl)
+      .then(() => {
+        setStatus("Message received successfully! If you do not hear from us within 48 hours, please email us at cufirst.info+contact@gmail.com", "success");
+        form.reset();
+      })
+      .catch((error) => {
+        console.error("Contact form submission failed:", error);
+        setStatus("Error sending message. Please email us at cufirst.info+contact@gmail.com", "error");
+      });
   });
 
-  // Keep iframe postMessage listener for Apps Script form submission (silent)
-  window.addEventListener(
-    "message",
-    function (ev) {
-      const data = ev.data || {};
-      // Just log for debugging, don't update status anymore
-      if (data.status === "success") {
-        console.log("Form saved to Apps Script");
-      } else if (data.status === "error") {
-        console.error("Apps Script error:", data.message);
-      }
-    },
-    false
-  );
+  if (!form.action || !discordProxyUrl) {
+    console.warn("One or more contact form endpoints are missing.");
+  }
+
 })();
 
